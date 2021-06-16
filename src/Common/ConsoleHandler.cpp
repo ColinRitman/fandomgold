@@ -1,10 +1,8 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Copyright (c) 2014-2016 XDN developers
-// Copyright (c) 2006-2013 Andrey N.Sabelnikov, www.sabelnikov.net
-// Copyright (c) 2016-2017 The Karbowanec developers
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 
 #include "ConsoleHandler.h"
 
@@ -13,9 +11,6 @@
 #include <sstream>
 
 #ifdef _WIN32
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
 #include <Windows.h>
 #else
 #include <unistd.h>
@@ -46,24 +41,6 @@ void AsyncConsoleReader::start() {
 bool AsyncConsoleReader::getline(std::string& line) {
   return m_queue.pop(line);
 }
-
-void AsyncConsoleReader::pause() {
-  if (m_stop) {
-    return;
-  }
-
-  m_stop = true;
-
-  if (m_thread.joinable()) {
-    m_thread.join();
-  }
-
-  m_thread = std::thread();
-}
-
-void AsyncConsoleReader::unpause() {
-  start();
-} 
 
 void AsyncConsoleReader::stop() {
 
@@ -105,11 +82,7 @@ void AsyncConsoleReader::consoleThread() {
 
 bool AsyncConsoleReader::waitInput() {
 #ifndef _WIN32
-  #if defined(__OpenBSD__) || defined(__ANDROID__)
-    int stdin_fileno = fileno(stdin);
-  #else
-    int stdin_fileno = ::fileno(stdin);
-  #endif
+  int stdin_fileno = ::fileno(stdin);
 
   while (!m_stop) {
     fd_set read_set;
@@ -132,20 +105,6 @@ bool AsyncConsoleReader::waitInput() {
 
     if (retval > 0) {
       return true;
-    }
-  }
-#else
-  while (!m_stop.load(std::memory_order_relaxed))
-  {
-    int retval = ::WaitForSingleObject(::GetStdHandle(STD_INPUT_HANDLE), 100);
-    switch (retval)
-    {
-      case WAIT_FAILED:
-        return false;
-      case WAIT_OBJECT_0:
-        return true;
-      default:
-        break;
     }
   }
 #endif
@@ -177,14 +136,6 @@ void ConsoleHandler::stop() {
   wait();
 }
 
-void ConsoleHandler::pause() {
-  m_consoleReader.pause();
-}
-
-void ConsoleHandler::unpause() {
-  m_consoleReader.unpause();
-}
-  
 void ConsoleHandler::wait() {
 
   try {

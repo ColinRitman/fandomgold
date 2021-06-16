@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-// Copyright (c) 2014-2016 XDN developers
-// Copyright (c) 2016-2018 Karbowanec
-// Copyright (c) 2018-2019 Fandom Gold Project
-
-// This file is part of Fandom Gold.
-// Fandom Gold is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// Fandom Gold is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// You should have received a copy of the GNU Lesser General Public License
-// along with Fandom Gold.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "HttpResponse.h"
 
@@ -32,7 +21,7 @@ const char* getStatusString(CryptoNote::HttpResponse::HTTP_STATUS status) {
   case CryptoNote::HttpResponse::STATUS_500:
     return "500 Internal Server Error";
   default:
-    throw std::runtime_error("Unknown HTTP status code given");
+    throw std::runtime_error("Unknown HTTP status code is given");
   }
 
   return ""; //unaccessible
@@ -59,8 +48,7 @@ namespace CryptoNote {
 
 HttpResponse::HttpResponse() {
   status = STATUS_200;
-  headers["Server"] = " {{{{ FANDOM GOLD }}}} |HTTP";
-  headers["Access-Control-Allow-Origin"] = "*";
+  headers["Server"] = "CryptoNote-based HTTP server";
 }
 
 void HttpResponse::setStatus(HTTP_STATUS s) {
@@ -100,4 +88,3 @@ std::ostream& HttpResponse::printHttpResponse(std::ostream& os) const {
 }
 
 } //namespace CryptoNote
-

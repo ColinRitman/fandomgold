@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "ITransaction.h"
 #include "TransactionApiExtra.h"
@@ -58,6 +47,7 @@ namespace CryptoNote {
     // ITransactionReader
     virtual Hash getTransactionHash() const override;
     virtual Hash getTransactionPrefixHash() const override;
+    virtual Hash getTransactionInputsHash() const override;
     virtual PublicKey getTransactionPublicKey() const override;
     virtual uint64_t getUnlockTime() const override;
     virtual bool getPaymentId(Hash& hash) const override;
@@ -70,6 +60,7 @@ namespace CryptoNote {
     virtual TransactionTypes::InputType getInputType(size_t index) const override;
     virtual void getInput(size_t index, KeyInput& input) const override;
     virtual void getInput(size_t index, MultisignatureInput& input) const override;
+    virtual std::vector<TransactionInput> getInputs() const override;
 
     // outputs
     virtual size_t getOutputCount() const override;
@@ -88,7 +79,7 @@ namespace CryptoNote {
 
     // get serialized transaction
     virtual BinaryArray getTransactionData() const override;
-
+    TransactionPrefix getTransactionPrefix() const override;
     // ITransactionWriter
 
     virtual void setUnlockTime(uint64_t unlockTime) override;
@@ -102,7 +93,7 @@ namespace CryptoNote {
     virtual size_t addInput(const AccountKeys& senderKeys, const TransactionTypes::InputKeyInfo& info, KeyPair& ephKeys) override;
 
     virtual size_t addOutput(uint64_t amount, const AccountPublicAddress& to) override;
-    virtual size_t addOutput(uint64_t amount, const std::vector<AccountPublicAddress>& to, uint32_t requiredSignatures) override;
+    virtual size_t addOutput(uint64_t amount, const std::vector<AccountPublicAddress>& to, uint32_t requiredSignatures, uint32_t term = 0) override;
     virtual size_t addOutput(uint64_t amount, const KeyOutput& out) override;
     virtual size_t addOutput(uint64_t amount, const MultisignatureOutput& out) override;
 
@@ -163,7 +154,7 @@ namespace CryptoNote {
     TransactionExtraPublicKey pk = { txKeys.publicKey };
     extra.set(pk);
 
-    transaction.version = CURRENT_TRANSACTION_VERSION;
+    transaction.version = TRANSACTION_VERSION_1;
     transaction.unlockTime = 0;
     transaction.extra = extra.serialize();
 
@@ -215,6 +206,11 @@ namespace CryptoNote {
     checkIfSigning();
     transaction.unlockTime = unlockTime;
     invalidateHash();
+  }
+
+  Hash TransactionImpl::getTransactionInputsHash() const
+  {
+    return getObjectHash(transaction.inputs);
   }
 
   bool TransactionImpl::getTransactionSecretKey(SecretKey& key) const {
@@ -271,6 +267,7 @@ namespace CryptoNote {
   size_t TransactionImpl::addInput(const MultisignatureInput& input) {
     checkIfSigning();
     transaction.inputs.push_back(input);
+    transaction.version = TRANSACTION_VERSION_2;
     invalidateHash();
     return transaction.inputs.size() - 1;
   }
@@ -287,7 +284,7 @@ namespace CryptoNote {
     return transaction.outputs.size() - 1;
   }
 
-  size_t TransactionImpl::addOutput(uint64_t amount, const std::vector<AccountPublicAddress>& to, uint32_t requiredSignatures) {
+  size_t TransactionImpl::addOutput(uint64_t amount, const std::vector<AccountPublicAddress>& to, uint32_t requiredSignatures, uint32_t term) {
     checkIfSigning();
 
     const auto& txKey = txSecretKey();
@@ -295,6 +292,7 @@ namespace CryptoNote {
     MultisignatureOutput outMsig;
     outMsig.requiredSignatureCount = requiredSignatures;
     outMsig.keys.resize(to.size());
+    outMsig.term = term;
     
     for (size_t i = 0; i < to.size(); ++i) {
       derivePublicKey(to[i], txKey, outputIndex, outMsig.keys[i]);
@@ -302,6 +300,7 @@ namespace CryptoNote {
 
     TransactionOutput out = { amount, outMsig };
     transaction.outputs.emplace_back(out);
+    transaction.version = TRANSACTION_VERSION_2;
     invalidateHash();
 
     return outputIndex;
@@ -402,6 +401,11 @@ namespace CryptoNote {
     return toBinaryArray(transaction);
   }
 
+  TransactionPrefix TransactionImpl::getTransactionPrefix() const
+  {
+    return transaction;
+  }
+
   void TransactionImpl::setPaymentId(const Hash& hash) {
     checkIfSigning();
     BinaryArray paymentIdBlob;
@@ -471,6 +475,11 @@ namespace CryptoNote {
 
   size_t TransactionImpl::getOutputCount() const {
     return transaction.outputs.size();
+  }
+
+  std::vector<TransactionInput> TransactionImpl::getInputs() const
+  {
+    return transaction.inputs;
   }
 
   uint64_t TransactionImpl::getOutputTotalAmount() const {

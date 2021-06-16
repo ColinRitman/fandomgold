@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers, The Karbowanec developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #pragma once
 
@@ -36,14 +25,6 @@ namespace Crypto {
 
   extern std::mutex random_lock;
 
-struct EllipticCurvePoint {
-  uint8_t data[32];
-};
-
-struct EllipticCurveScalar {
-  uint8_t data[32];
-};
-
   class crypto_ops {
     crypto_ops();
     crypto_ops(const crypto_ops &);
@@ -52,10 +33,8 @@ struct EllipticCurveScalar {
 
     static void generate_keys(PublicKey &, SecretKey &);
     friend void generate_keys(PublicKey &, SecretKey &);
-  static void generate_deterministic_keys(PublicKey &pub, SecretKey &sec, SecretKey& second);
-  friend void generate_deterministic_keys(PublicKey &pub, SecretKey &sec, SecretKey& second);
-  static SecretKey generate_m_keys(PublicKey &pub, SecretKey &sec, const SecretKey& recovery_key = SecretKey(), bool recover = false);
-  friend SecretKey generate_m_keys(PublicKey &pub, SecretKey &sec, const SecretKey& recovery_key, bool recover);
+    static void generate_keys_from_seed(PublicKey &, SecretKey &, SecretKey &);
+    friend void generate_keys_from_seed(PublicKey &, SecretKey &, SecretKey &);
     static bool check_key(const PublicKey &);
     friend bool check_key(const PublicKey &);
     static bool secret_key_to_public_key(const SecretKey &, PublicKey &);
@@ -92,10 +71,17 @@ struct EllipticCurveScalar {
     friend void hash_data_to_ec(const uint8_t*, std::size_t, PublicKey&);
     static void generate_ring_signature(const Hash &, const KeyImage &,
       const PublicKey *const *, size_t, const SecretKey &, size_t, Signature *);
+	  static void generate_tx_proof(const Hash &, const PublicKey &, const PublicKey &, const PublicKey &, const SecretKey &, Signature &);
+	friend void generate_tx_proof(const Hash &, const PublicKey &, const PublicKey &, const PublicKey &, const SecretKey &, Signature &);
+	static bool check_tx_proof(const Hash &, const PublicKey &, const PublicKey &, const PublicKey &, const Signature &);
+	friend bool check_tx_proof(const Hash &, const PublicKey &, const PublicKey &, const PublicKey &, const Signature &);      
+
     friend void generate_ring_signature(const Hash &, const KeyImage &,
       const PublicKey *const *, size_t, const SecretKey &, size_t, Signature *);
+
     static bool check_ring_signature(const Hash &, const KeyImage &,
       const PublicKey *const *, size_t, const Signature *);
+
     friend bool check_ring_signature(const Hash &, const KeyImage &,
       const PublicKey *const *, size_t, const Signature *);
   };
@@ -139,18 +125,12 @@ struct EllipticCurveScalar {
     }
   };
 
+  void hash_to_scalar(const void *data, size_t length, EllipticCurveScalar &res);
+
   /* Generate a new key pair
    */
   inline void generate_keys(PublicKey &pub, SecretKey &sec) {
     crypto_ops::generate_keys(pub, sec);
-  }
-
-  inline void generate_deterministic_keys(PublicKey &pub, SecretKey &sec, SecretKey& second) {
-    crypto_ops::generate_deterministic_keys(pub, sec, second);
-  }
-
-  inline SecretKey generate_m_keys(PublicKey &pub, SecretKey &sec, const SecretKey& recovery_key = SecretKey(), bool recover = false) {
-    return crypto_ops::generate_m_keys(pub, sec, recovery_key, recover);
   }
 
   /* Check a public key. Returns true if it is valid, false otherwise.
@@ -163,6 +143,12 @@ struct EllipticCurveScalar {
    */
   inline bool secret_key_to_public_key(const SecretKey &sec, PublicKey &pub) {
     return crypto_ops::secret_key_to_public_key(sec, pub);
+  }
+
+/* Generate a new key pair from a seed
+   */
+  inline void generate_keys_from_seed(PublicKey &pub, SecretKey &sec, SecretKey &seed) {
+    crypto_ops::generate_keys_from_seed(pub, sec, seed);
   }
 
   /* To generate an ephemeral key used to send money to:
@@ -190,7 +176,7 @@ struct EllipticCurveScalar {
     const PublicKey &derived_key, PublicKey &base, EllipticCurveScalar &hashed_derivation) {
     return crypto_ops::underive_public_key_and_get_scalar(derivation, output_index, derived_key, base, hashed_derivation);
   }
-  
+
   inline void derive_secret_key(const KeyDerivation &derivation, std::size_t output_index,
     const SecretKey &base, const uint8_t* prefix, size_t prefixLength, SecretKey &derived_key) {
     crypto_ops::derive_secret_key(derivation, output_index, base, prefix, prefixLength, derived_key);
@@ -222,6 +208,16 @@ struct EllipticCurveScalar {
   inline bool check_signature(const Hash &prefix_hash, const PublicKey &pub, const Signature &sig) {
     return crypto_ops::check_signature(prefix_hash, pub, sig);
   }
+
+  /* Generation and checking of a tx proof; given a tx pubkey R, the recipient's view pubkey A, and the key
+   * derivation D, the signature proves the knowledge of the tx secret key r such that R=r*G and D=r*A
+   */
+  inline void generate_tx_proof(const Hash &prefix_hash, const PublicKey &R, const PublicKey &A, const PublicKey &D, const SecretKey &r, Signature &sig) {
+    crypto_ops::generate_tx_proof(prefix_hash, R, A, D, r, sig);
+  }
+  inline bool check_tx_proof(const Hash &prefix_hash, const PublicKey &R, const PublicKey &A, const PublicKey &D, const Signature &sig) {
+    return crypto_ops::check_tx_proof(prefix_hash, R, A, D, sig);
+  }	
 
   /* To send money to a key:
    * * The sender generates an ephemeral key and includes it in transaction output.
@@ -267,6 +263,7 @@ struct EllipticCurveScalar {
     return check_ring_signature(prefix_hash, image, pubs.data(), pubs.size(), sig);
   }
 
+  static inline const SecretKey &EllipticCurveScalar2SecretKey(const EllipticCurveScalar &k) { return (const SecretKey &)k; }
 }
 
 CRYPTO_MAKE_HASHABLE(PublicKey)

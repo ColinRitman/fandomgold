@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "ITransaction.h"
 
@@ -38,6 +27,7 @@ public:
 
   virtual Hash getTransactionHash() const override;
   virtual Hash getTransactionPrefixHash() const override;
+  virtual Hash getTransactionInputsHash() const override;
   virtual PublicKey getTransactionPublicKey() const override;
   virtual uint64_t getUnlockTime() const override;
 
@@ -52,6 +42,7 @@ public:
   virtual TransactionTypes::InputType getInputType(size_t index) const override;
   virtual void getInput(size_t index, KeyInput& input) const override;
   virtual void getInput(size_t index, MultisignatureInput& input) const override;
+  virtual std::vector<TransactionInput> getInputs() const override;
 
   // outputs
   virtual size_t getOutputCount() const override;
@@ -71,7 +62,7 @@ public:
 
   // serialized transaction
   virtual BinaryArray getTransactionData() const override;
-
+  virtual TransactionPrefix getTransactionPrefix() const override;
   virtual bool getTransactionSecretKey(SecretKey& key) const override;
 
 private:
@@ -96,6 +87,11 @@ Hash TransactionPrefixImpl::getTransactionHash() const {
 
 Hash TransactionPrefixImpl::getTransactionPrefixHash() const {
   return getObjectHash(m_txPrefix);
+}
+
+Hash TransactionPrefixImpl::getTransactionInputsHash() const
+{
+  return getObjectHash(m_txPrefix.inputs);
 }
 
 PublicKey TransactionPrefixImpl::getTransactionPublicKey() const {
@@ -177,6 +173,11 @@ void TransactionPrefixImpl::getOutput(size_t index, KeyOutput& output, uint64_t&
   amount = out.amount;
 }
 
+std::vector<TransactionInput> TransactionPrefixImpl::getInputs() const
+{
+  return m_txPrefix.inputs;
+}
+
 void TransactionPrefixImpl::getOutput(size_t index, MultisignatureOutput& output, uint64_t& amount) const {
   const auto& out = getOutputChecked(m_txPrefix, index, TransactionTypes::OutputType::Multisignature);
   output = boost::get<MultisignatureOutput>(out.target);
@@ -209,6 +210,11 @@ bool TransactionPrefixImpl::validateSignatures() const {
 
 BinaryArray TransactionPrefixImpl::getTransactionData() const {
   return toBinaryArray(m_txPrefix);
+}
+
+TransactionPrefix TransactionPrefixImpl::getTransactionPrefix() const
+{
+  return m_txPrefix;
 }
 
 bool TransactionPrefixImpl::getTransactionSecretKey(SecretKey& key) const {

@@ -1,19 +1,9 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2020 Karbo developers
+// Copyright (c) 2018-2021 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #pragma once
 
@@ -48,6 +38,15 @@ class PeerlistManager {
     >
   > peers_indexed;
 
+  typedef boost::multi_index_container<
+      AnchorPeerlistEntry,
+      boost::multi_index::indexed_by<
+          // access by anchor_peerlist_entry::net_adress
+          boost::multi_index::ordered_unique<boost::multi_index::tag<by_addr>, boost::multi_index::member<AnchorPeerlistEntry, NetworkAddress, &AnchorPeerlistEntry::adr>>,
+          // sort by anchor_peerlist_entry::first_seen
+          boost::multi_index::ordered_non_unique<boost::multi_index::tag<by_time>, boost::multi_index::member<AnchorPeerlistEntry, int64_t, &AnchorPeerlistEntry::first_seen>>>>
+      anchor_peers_indexed;
+
 public:
 
   class Peerlist {
@@ -72,6 +71,8 @@ public:
   bool get_peerlist_full(std::list<PeerlistEntry>& pl_gray, std::list<PeerlistEntry>& pl_white) const;
   bool get_white_peer_by_index(PeerlistEntry& p, size_t i) const;
   bool get_gray_peer_by_index(PeerlistEntry& p, size_t i) const;
+  bool append_with_peer_anchor(const AnchorPeerlistEntry &pr);
+
   bool append_with_peer_white(const PeerlistEntry& pr);
   bool append_with_peer_gray(const PeerlistEntry& pr);
   bool set_peer_just_seen(PeerIdType peer, uint32_t ip, uint32_t port);
@@ -85,12 +86,15 @@ public:
 
   Peerlist& getWhite();
   Peerlist& getGray();
+  bool get_and_empty_anchor_peerlist(std::vector<AnchorPeerlistEntry> &apl);
+  bool remove_from_peer_anchor(const NetworkAddress &addr);
 
 private:
   std::string m_config_folder;
   bool m_allow_local_ip;
   peers_indexed m_peers_gray;
   peers_indexed m_peers_white;
+  anchor_peers_indexed m_peers_anchor;
   Peerlist m_whitePeerlist;
   Peerlist m_grayPeerlist;
 };

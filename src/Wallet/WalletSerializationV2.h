@@ -22,6 +22,7 @@
 #include "Serialization/ISerializer.h"
 #include "Transfers/TransfersSynchronizer.h"
 #include "Wallet/WalletIndices.h"
+#include "IWallet.h"
 
 namespace CryptoNote {
 
@@ -33,11 +34,14 @@ public:
     Crypto::SecretKey& viewSecretKey,
     uint64_t& actualBalance,
     uint64_t& pendingBalance,
+    uint64_t& lockedDepositBalance,
+    uint64_t& unlockedDepositBalance,
     WalletsContainer& walletsContainer,
     TransfersSyncronizer& synchronizer,
     UnlockTransactionJobs& unlockTransactions,
     WalletTransactions& transactions,
     WalletTransfers& transfers,
+    WalletDeposits& deposits,
     UncommitedTransactions& uncommitedTransactions,
     std::string& extra,
     uint32_t transactionSoftLockTime
@@ -59,6 +63,9 @@ private:
   void loadTransactions(CryptoNote::ISerializer& serializer);
   void saveTransactions(CryptoNote::ISerializer& serializer);
 
+  void loadDeposits(CryptoNote::ISerializer& serializer);
+  void saveDeposits(CryptoNote::ISerializer& serializer);
+
   void loadTransfers(CryptoNote::ISerializer& serializer);
   void saveTransfers(CryptoNote::ISerializer& serializer);
 
@@ -71,11 +78,14 @@ private:
   ITransfersObserver& m_transfersObserver;
   uint64_t& m_actualBalance;
   uint64_t& m_pendingBalance;
+  uint64_t& m_lockedDepositBalance;
+  uint64_t& m_unlockedDepositBalance;
   WalletsContainer& m_walletsContainer;
   TransfersSyncronizer& m_synchronizer;
   UnlockTransactionJobs& m_unlockTransactions;
   WalletTransactions& m_transactions;
   WalletTransfers& m_transfers;
+  WalletDeposits& m_deposits;
   UncommitedTransactions& m_uncommitedTransactions;
   std::string& m_extra;
   uint32_t m_transactionSoftLockTime;

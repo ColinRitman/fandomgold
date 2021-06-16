@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "BlockchainExplorerDataBuilder.h"
 
@@ -23,6 +12,7 @@
 #include "Common/StringTools.h"
 #include "CryptoNoteCore/CryptoNoteFormatUtils.h"
 #include "CryptoNoteCore/CryptoNoteTools.h"
+#include "CryptoNoteCore/Currency.h"
 #include "CryptoNoteCore/TransactionExtra.h"
 #include "CryptoNoteConfig.h"
 
@@ -146,15 +136,13 @@ bool BlockchainExplorerDataBuilder::fillBlockDetails(const Block &block, BlockDe
       return false;
     }
   }
-
   uint64_t maxReward = 0;
   uint64_t currentReward = 0;
   int64_t emissionChange = 0;
-  if (!core.getBlockReward(block.majorVersion, blockDetails.sizeMedian, 0, prevBlockGeneratedCoins, 0, maxReward, emissionChange)) {
+  if (!core.getBlockReward(block.majorVersion, blockDetails.sizeMedian, 0, prevBlockGeneratedCoins, 0, blockDetails.height, maxReward, emissionChange)) {
     return false;
   }
-
-  if (!core.getBlockReward(block.majorVersion, blockDetails.sizeMedian, blockDetails.transactionsCumulativeSize, prevBlockGeneratedCoins, 0, currentReward, emissionChange)) {
+  if (!core.getBlockReward(block.majorVersion, blockDetails.sizeMedian, blockDetails.transactionsCumulativeSize, prevBlockGeneratedCoins, 0, blockDetails.height, currentReward, emissionChange)) {
     return false;
   }
 
@@ -229,18 +217,14 @@ bool BlockchainExplorerDataBuilder::fillTransactionDetails(const Transaction& tr
   if (!get_inputs_money_amount(transaction, inputsAmount)) {
     return false;
   }
-  transactionDetails.totalInputsAmount = inputsAmount;
+  transactionDetails.totalInputsAmount = core.currency().getTransactionAllInputsAmount(transaction, transactionDetails.blockHeight);
 
   if (transaction.inputs.size() > 0 && transaction.inputs.front().type() == typeid(BaseInput)) {
     //It's gen transaction
     transactionDetails.fee = 0;
     transactionDetails.mixin = 0;
   } else {
-    uint64_t fee;
-    if (!get_tx_fee(transaction, fee)) {
-      return false;
-    }
-    transactionDetails.fee = fee;
+    transactionDetails.fee = inputsAmount < transactionDetails.totalOutputsAmount ? CryptoNote::parameters::MINIMUM_FEE : core.currency().getTransactionFee(transaction, transactionDetails.blockHeight);
     uint64_t mixin;
     if (!getMixin(transaction, mixin)) {
       return false;

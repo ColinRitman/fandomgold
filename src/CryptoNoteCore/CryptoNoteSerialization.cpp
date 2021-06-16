@@ -1,18 +1,8 @@
-// Copyright (c) 2012-2016 The CryptoNote developers, The Bytecoin developers
-// Copyright (c) 2016-2018 The Karbowanec developers
-// Copyright (c) 2018-2019 The Fandom GOLD developers
-//
-// This file is part of Fandom GOLD.
-// Fandom GOLD is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// Fandom GOLD is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// You should have received a copy of the GNU Lesser General Public License
-// along with Fandom GOLD.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "CryptoNoteSerialization.h"
 
@@ -161,8 +151,9 @@ bool serialize(KeyImage& keyImage, Common::StringView name, CryptoNote::ISeriali
   return serializePod(keyImage, name, serializer);
 }
 
-bool serialize(chacha8_iv& chacha, Common::StringView name, CryptoNote::ISerializer& serializer) {
-  return serializePod(chacha, name, serializer);
+bool serialize(chacha8_iv &chacha8, Common::StringView name, CryptoNote::ISerializer &serializer)
+{
+  return serializePod(chacha8, name, serializer);
 }
 
 bool serialize(Signature& sig, Common::StringView name, CryptoNote::ISerializer& serializer) {
@@ -184,7 +175,7 @@ namespace CryptoNote {
 void serialize(TransactionPrefix& txP, ISerializer& serializer) {
   serializer(txP.version, "version");
 
-  if (CURRENT_TRANSACTION_VERSION < txP.version) {
+  if (TRANSACTION_VERSION_2 < txP.version) {
     throw std::runtime_error("Wrong transaction version");
   }
 
@@ -271,7 +262,14 @@ void serialize(MultisignatureInput& multisignature, ISerializer& serializer) {
   serializer(multisignature.amount, "amount");
   serializer(multisignature.signatureCount, "signatures");
   serializer(multisignature.outputIndex, "outputIndex");
+  serializer(multisignature.term, "term");
 }
+
+
+void serialize(TransactionInputs & inputs, ISerializer & serializer) {
+  serializer(inputs, "vin");
+}
+
 
 void serialize(TransactionOutput& output, ISerializer& serializer) {
   serializer(output.amount, "amount");
@@ -301,6 +299,7 @@ void serialize(KeyOutput& key, ISerializer& serializer) {
 void serialize(MultisignatureOutput& multisignature, ISerializer& serializer) {
   serializer(multisignature.keys, "keys");
   serializer(multisignature.requiredSignatureCount, "required_signatures");
+  serializer(multisignature.term, "term");
 }
 
 void serialize(ParentBlockSerializer& pbs, ISerializer& serializer) {
@@ -377,7 +376,7 @@ void serialize(ParentBlockSerializer& pbs, ISerializer& serializer) {
 
 void serializeBlockHeader(BlockHeader& header, ISerializer& serializer) {
   serializer(header.majorVersion, "major_version");
-  if (header.majorVersion > BLOCK_MAJOR_VERSION_7) {
+  if (header.majorVersion > BLOCK_MAJOR_VERSION_8) {
     throw std::runtime_error("Wrong major version");
   }
 

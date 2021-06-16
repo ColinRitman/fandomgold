@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #pragma once
 
@@ -77,6 +66,19 @@ private:
   TransactionId m_id;
 };
 
+class WalletDepositsUpdatedEvent : public WalletLegacyEvent {
+public:
+  WalletDepositsUpdatedEvent(std::vector<DepositId>&& depositIds) : updatedDeposits(depositIds) {}
+
+  virtual ~WalletDepositsUpdatedEvent() {}
+
+  virtual void notify(Tools::ObserverManager<CryptoNote::IWalletLegacyObserver>& observer) override {
+    observer.notify(&IWalletLegacyObserver::depositsUpdated, updatedDeposits);
+  }
+private:
+  std::vector<DepositId> updatedDeposits;
+};
+
 class WalletSynchronizationProgressUpdatedEvent : public WalletLegacyEvent
 {
 public:
@@ -133,5 +135,67 @@ public:
 private:
   uint64_t m_balance;
 };
+
+class WalletActualDepositBalanceUpdatedEvent : public WalletLegacyEvent
+{
+public:
+  WalletActualDepositBalanceUpdatedEvent(uint64_t balance) : m_balance(balance) {}
+  virtual ~WalletActualDepositBalanceUpdatedEvent() {}
+
+  virtual void notify(Tools::ObserverManager<CryptoNote::IWalletLegacyObserver>& observer)
+  {
+    observer.notify(&IWalletLegacyObserver::actualDepositBalanceUpdated, m_balance);
+  }
+private:
+  uint64_t m_balance;
+};
+
+class WalletPendingDepositBalanceUpdatedEvent : public WalletLegacyEvent
+{
+public:
+  WalletPendingDepositBalanceUpdatedEvent(uint64_t balance) : m_balance(balance) {}
+  virtual ~WalletPendingDepositBalanceUpdatedEvent() {}
+
+  virtual void notify(Tools::ObserverManager<CryptoNote::IWalletLegacyObserver>& observer)
+  {
+    observer.notify(&IWalletLegacyObserver::pendingDepositBalanceUpdated, m_balance);
+  }
+private:
+  uint64_t m_balance;
+};
+
+/* investments */
+
+class WalletActualInvestmentBalanceUpdatedEvent : public WalletLegacyEvent
+{
+public:
+  WalletActualInvestmentBalanceUpdatedEvent(uint64_t balance) : m_balance(balance) {}
+  virtual ~WalletActualInvestmentBalanceUpdatedEvent() {}
+
+  virtual void notify(Tools::ObserverManager<CryptoNote::IWalletLegacyObserver>& observer)
+  {
+    observer.notify(&IWalletLegacyObserver::actualInvestmentBalanceUpdated, m_balance);
+  }
+private:
+  uint64_t m_balance;
+};
+
+class WalletPendingInvestmentBalanceUpdatedEvent : public WalletLegacyEvent
+{
+public:
+  WalletPendingInvestmentBalanceUpdatedEvent(uint64_t balance) : m_balance(balance) {}
+  virtual ~WalletPendingInvestmentBalanceUpdatedEvent() {}
+
+  virtual void notify(Tools::ObserverManager<CryptoNote::IWalletLegacyObserver>& observer)
+  {
+    observer.notify(&IWalletLegacyObserver::pendingInvestmentBalanceUpdated, m_balance);
+  }
+private:
+  uint64_t m_balance;
+};
+
+
+
+
 
 } /* namespace CryptoNote */

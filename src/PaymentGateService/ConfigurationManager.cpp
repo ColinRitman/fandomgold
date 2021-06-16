@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "ConfigurationManager.h"
 
@@ -22,7 +11,6 @@
 
 #include "Common/CommandLine.h"
 #include "Common/Util.h"
-#include "version.h"
 
 namespace PaymentService {
 
@@ -46,8 +34,7 @@ bool ConfigurationManager::init(int argc, char** argv) {
   cmdGeneralOptions.add_options()
       ("help,h", "produce this help message and exit")
       ("local", po::bool_switch(), "start with local node (remote is default)")
-      ("testnet", po::bool_switch(), "testnet mode")
-      ("version", "Output version information");
+      ("testnet", po::bool_switch(), "testnet mode");
 
   command_line::add_arg(cmdGeneralOptions, command_line::arg_data_dir, Tools::getDefaultDataDirectory());
   command_line::add_arg(confGeneralOptions, command_line::arg_data_dir, Tools::getDefaultDataDirectory());
@@ -59,7 +46,7 @@ bool ConfigurationManager::init(int argc, char** argv) {
   CryptoNote::NetNodeConfig::initOptions(netNodeOptions);
   CryptoNote::CoreConfig::initOptions(netNodeOptions);
 
-  po::options_description remoteNodeOptions("Remote Node Options");
+  po::options_description remoteNodeOptions("Daemon Options");
   RpcNodeConfiguration::initOptions(remoteNodeOptions);
 
   po::options_description cmdOptionsDesc;
@@ -74,11 +61,6 @@ bool ConfigurationManager::init(int argc, char** argv) {
 
   if (cmdOptions.count("help")) {
     std::cout << cmdOptionsDesc << std::endl;
-    return false;
-  }
-
-  if (cmdOptions.count("version") > 0) {
-    std::cout << "walletd v" << PROJECT_VERSION_LONG;
     return false;
   }
 

@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-// Copyright (c) 2018-2019, The FandomGOLD developers
-// This file is part of FandomGOLD.
-//
-// FandomGOLD is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// FandomGOLD is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with FandomGOLD.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #pragma  once
 
@@ -23,4 +12,3 @@
 #define WALLET_RPC_ERROR_CODE_DAEMON_IS_BUSY          -3
 #define WALLET_RPC_ERROR_CODE_GENERIC_TRANSFER_ERROR  -4
 #define WALLET_RPC_ERROR_CODE_WRONG_PAYMENT_ID        -5
-#define WALLET_RPC_ERROR_CODE_WRONG_MIXIN             -6

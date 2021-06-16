@@ -1,18 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-// Copyright (c) 2018-2019, The Fandom Gold Project
-
-// This file is part of FANDOM GOLD.
-// FANDOM GOLD is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// FANDOM GOLD is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// You should have received a copy of the GNU Lesser General Public License
-// along with FANDOM GOLD.  If not, see <http://www.gnu.org/licenses/>.
-
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "Miner.h"
 
@@ -223,7 +213,7 @@ namespace CryptoNote
     std::lock_guard<std::mutex> lk(m_threads_lock);
 
     if(!m_threads.empty()) {
-      logger(ERROR) << "Unable to start mining because there are jobs already started";
+      logger(ERROR) << "Unable to start miner because there are active mining threads";
       return false;
     }
 
@@ -241,7 +231,7 @@ namespace CryptoNote
       m_threads.push_back(std::thread(std::bind(&miner::worker_thread, this, i)));
     }
 
-    logger(INFO, YELLOW) << "FANDOM GOLD mining has begun. Using " << threads_count << " CPU threads";
+    logger(INFO, YELLOW) << "FANGO mining has begun. Using " << threads_count << " CPU threads";
     return true;
   }
   
@@ -271,7 +261,7 @@ namespace CryptoNote
     }
 
     m_threads.clear();
-    logger(INFO) << "FANDOM GOLD mining has been stopped, " << m_threads.size() << " halted" ;
+    logger(INFO) << "FANGO mining has been stopped, " << m_threads.size() << " halted" ;
     return true;
   }
   //-----------------------------------------------------------------------------------------------------
@@ -363,7 +353,7 @@ namespace CryptoNote
   //-----------------------------------------------------------------------------------------------------
   bool miner::worker_thread(uint32_t th_local_index)
   {
-    logger(INFO, YELLOW) << "GOLD mining CPU "<< th_local_index << " ARMED";
+    logger(INFO, YELLOW) << "CPU thread "<< th_local_index << " MINING";
     uint32_t nonce = m_starter_nonce + th_local_index;
     difficulty_type local_diff = 0;
     uint32_t local_template_ver = 0;
@@ -407,7 +397,7 @@ namespace CryptoNote
         //we lucky!
         ++m_config.current_extra_message_index;
 
-        logger(INFO, BRIGHT_YELLOW) << "FANDOM GOLD block FOUND at difficulty of: " << local_diff;
+        logger(INFO, BRIGHT_YELLOW) << "FANGO block found at difficulty of: " << local_diff;
 
         if(!m_handler.handle_block_found(b)) {
           --m_config.current_extra_message_index;
@@ -425,4 +415,3 @@ namespace CryptoNote
   }
   //-----------------------------------------------------------------------------------------------------
 }
-

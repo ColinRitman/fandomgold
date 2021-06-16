@@ -1,19 +1,8 @@
-// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
-//
-// This file is part of Bytecoin.
-//
-// Bytecoin is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Bytecoin is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (c) 2011-2017 The Cryptonote developers
+// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2018-2019 Conceal Network & Conceal Devs
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "NodeRpcProxy.h"
 #include "NodeErrors.h"
@@ -33,6 +22,7 @@
 
 #include "Common/StringTools.h"
 #include "CryptoNoteCore/CryptoNoteBasicImpl.h"
+#include "CryptoNoteCore/CryptoNoteFormatUtils.h"
 #include "CryptoNoteCore/CryptoNoteTools.h"
 #include "Rpc/CoreRpcServerCommandsDefinitions.h"
 #include "Rpc/HttpClient.h"
@@ -66,32 +56,21 @@ NodeRpcProxy::NodeRpcProxy(const std::string& nodeHost, unsigned short nodePort)
     m_pullInterval(5000),
     m_nodeHost(nodeHost),
     m_nodePort(nodePort),
+    m_lastLocalBlockTimestamp(0),
     m_connected(true) {
   resetInternalState();
 }
 
 NodeRpcProxy::~NodeRpcProxy() {
-  try {
     shutdown();
-  } catch (std::exception&) {
-  }
 }
 
 void NodeRpcProxy::resetInternalState() {
   m_stop = false;
   m_peerCount.store(0, std::memory_order_relaxed);
+  m_nodeHeight.store(0, std::memory_order_relaxed);
   m_networkHeight.store(0, std::memory_order_relaxed);
-  lastLocalBlockHeaderInfo.index = 0;
-  lastLocalBlockHeaderInfo.majorVersion = 0;
-  lastLocalBlockHeaderInfo.minorVersion = 0;
-  lastLocalBlockHeaderInfo.timestamp = 0;
-  lastLocalBlockHeaderInfo.hash = CryptoNote::NULL_HASH;
-  lastLocalBlockHeaderInfo.prevHash = CryptoNote::NULL_HASH;
-  lastLocalBlockHeaderInfo.nonce = 0;
-  lastLocalBlockHeaderInfo.isAlternative = false;
-  lastLocalBlockHeaderInfo.depth = 0;
-  lastLocalBlockHeaderInfo.difficulty = 0;
-  lastLocalBlockHeaderInfo.reward = 0;
+  m_lastKnowHash = CryptoNote::NULL_HASH;
   m_knownTxs.clear();
 }
 
@@ -135,7 +114,7 @@ bool NodeRpcProxy::shutdown() {
     m_workerThread.join();
   }
   m_state = STATE_NOT_INITIALIZED;
-
+  m_cv_initialized.notify_all();
   return true;
 }
 
@@ -194,7 +173,7 @@ void NodeRpcProxy::updateNodeStatus() {
 
 bool NodeRpcProxy::updatePoolStatus() {
   std::vector<Crypto::Hash> knownTxs = getKnownTxsVector();
-  Crypto::Hash tailBlock = lastLocalBlockHeaderInfo.hash;
+  Crypto::Hash tailBlock = m_lastKnowHash;
 
   bool isBcActual = false;
   std::vector<std::unique_ptr<ITransactionReader>> addedTxs;
@@ -225,27 +204,15 @@ void NodeRpcProxy::updateBlockchainStatus() {
 
   if (!ec) {
     Crypto::Hash blockHash;
-    Crypto::Hash prevBlockHash;
-    if (!parse_hash256(rsp.block_header.hash, blockHash) || !parse_hash256(rsp.block_header.prev_hash, prevBlockHash)) {
+    if (!parse_hash256(rsp.block_header.hash, blockHash)) {
       return;
     }
 
-    std::unique_lock<std::mutex> lock(m_mutex);
-    uint32_t blockIndex = rsp.block_header.height;
-    if (blockHash != lastLocalBlockHeaderInfo.hash) {
-      lastLocalBlockHeaderInfo.index = blockIndex;
-      lastLocalBlockHeaderInfo.majorVersion = rsp.block_header.major_version;
-      lastLocalBlockHeaderInfo.minorVersion = rsp.block_header.minor_version;
-      lastLocalBlockHeaderInfo.timestamp = rsp.block_header.timestamp;
-      lastLocalBlockHeaderInfo.hash = blockHash;
-      lastLocalBlockHeaderInfo.prevHash = prevBlockHash;
-      lastLocalBlockHeaderInfo.nonce = rsp.block_header.nonce;
-      lastLocalBlockHeaderInfo.isAlternative = rsp.block_header.orphan_status;
-      lastLocalBlockHeaderInfo.depth = rsp.block_header.depth;
-      lastLocalBlockHeaderInfo.difficulty = rsp.block_header.difficulty;
-      lastLocalBlockHeaderInfo.reward = rsp.block_header.reward;
-      lock.unlock();
-      m_observerManager.notify(&INodeObserver::localBlockchainUpdated, blockIndex);
+    if (blockHash != m_lastKnowHash) {
+      m_lastKnowHash = blockHash;
+      m_nodeHeight.store(static_cast<uint32_t>(rsp.block_header.height), std::memory_order_relaxed);
+      m_lastLocalBlockTimestamp.store(rsp.block_header.timestamp, std::memory_order_relaxed);
+      m_observerManager.notify(&INodeObserver::localBlockchainUpdated, m_nodeHeight.load(std::memory_order_relaxed));
     }
   }
 
@@ -256,9 +223,7 @@ void NodeRpcProxy::updateBlockchainStatus() {
   if (!ec) {
     //a quirk to let wallets work with previous versions daemons.
     //Previous daemons didn't have the 'last_known_block_index' parameter in RPC so it may have zero value.
-    std::unique_lock<std::mutex> lock(m_mutex);
-    auto lastKnownBlockIndex = std::max(getInfoResp.last_known_block_index, lastLocalBlockHeaderInfo.index);
-    lock.unlock();
+    auto lastKnownBlockIndex = std::max(getInfoResp.last_known_block_index, m_nodeHeight.load(std::memory_order_relaxed));
     if (m_networkHeight.load(std::memory_order_relaxed) != lastKnownBlockIndex) {
       m_networkHeight.store(lastKnownBlockIndex, std::memory_order_relaxed);
       m_observerManager.notify(&INodeObserver::lastKnownBlockHeightUpdated, m_networkHeight.load(std::memory_order_relaxed));
@@ -316,8 +281,7 @@ size_t NodeRpcProxy::getPeerCount() const {
 }
 
 uint32_t NodeRpcProxy::getLastLocalBlockHeight() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return lastLocalBlockHeaderInfo.index;
+  return m_nodeHeight.load(std::memory_order_relaxed);
 }
 
 uint32_t NodeRpcProxy::getLastKnownBlockHeight() const {
@@ -325,8 +289,7 @@ uint32_t NodeRpcProxy::getLastKnownBlockHeight() const {
 }
 
 uint32_t NodeRpcProxy::getLocalBlockCount() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return lastLocalBlockHeaderInfo.index + 1;
+  return m_nodeHeight.load(std::memory_order_relaxed);
 }
 
 uint32_t NodeRpcProxy::getKnownBlockCount() const {
@@ -334,13 +297,7 @@ uint32_t NodeRpcProxy::getKnownBlockCount() const {
 }
 
 uint64_t NodeRpcProxy::getLastLocalBlockTimestamp() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return lastLocalBlockHeaderInfo.timestamp;
-}
-
-BlockHeaderInfo NodeRpcProxy::getLastLocalBlockHeaderInfo() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return lastLocalBlockHeaderInfo;
+  return m_lastLocalBlockTimestamp;
 }
 
 void NodeRpcProxy::relayTransaction(const CryptoNote::Transaction& transaction, const Callback& callback) {
@@ -459,6 +416,7 @@ void NodeRpcProxy::getBlocks(const std::vector<Crypto::Hash>& blockHashes, std::
   // TODO NOT IMPLEMENTED
   callback(std::error_code());
 }
+
 
 void NodeRpcProxy::getTransactions(const std::vector<Crypto::Hash>& transactionHashes, std::vector<TransactionDetails>& transactions, const Callback& callback) {
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -625,6 +583,52 @@ std::error_code NodeRpcProxy::doGetPoolSymmetricDifference(std::vector<Crypto::H
   return ec;
 }
 
+std::error_code NodeRpcProxy::doGetTransaction(const Crypto::Hash &transactionHash, CryptoNote::Transaction &transaction)
+{
+  COMMAND_RPC_GET_TRANSACTIONS::request req = AUTO_VAL_INIT(req);
+  COMMAND_RPC_GET_TRANSACTIONS::response resp = AUTO_VAL_INIT(resp);
+
+  req.txs_hashes.push_back(Common::podToHex(transactionHash));
+
+  std::error_code ec = jsonCommand("/gettransactions", req, resp);
+  if (ec)
+  {
+    return ec;
+  }
+
+  if (resp.missed_tx.size() > 0)
+  {
+    return make_error_code(CryptoNote::error::REQUEST_ERROR);
+  }
+
+  BinaryArray tx_blob;
+  if (!Common::fromHex(resp.txs_as_hex[0], tx_blob))
+  {
+    return make_error_code(error::INTERNAL_NODE_ERROR);
+  }
+
+  Crypto::Hash tx_hash = NULL_HASH;
+  Crypto::Hash tx_prefixt_hash = NULL_HASH;
+  if (!parseAndValidateTransactionFromBinaryArray(tx_blob, transaction, tx_hash, tx_prefixt_hash) || tx_hash != transactionHash)
+  {
+    return make_error_code(error::INTERNAL_NODE_ERROR);
+  }
+
+  return ec;
+}
+
+void NodeRpcProxy::getTransaction(const Crypto::Hash &transactionHash, CryptoNote::Transaction &transaction, const Callback &callback)
+{
+  std::lock_guard<std::mutex> lock(m_mutex);
+  if (m_state != STATE_INITIALIZED)
+  {
+    callback(make_error_code(error::NOT_INITIALIZED));
+    return;
+  }
+
+  scheduleRequest(std::bind(&NodeRpcProxy::doGetTransaction, this, std::cref(transactionHash), std::ref(transaction)), callback);
+}
+
 void NodeRpcProxy::scheduleRequest(std::function<std::error_code()>&& procedure, const Callback& callback) {
   // callback is located on stack, so copy it inside binder
   class Wrapper {
@@ -713,7 +717,6 @@ std::error_code NodeRpcProxy::jsonRpcCommand(const std::string& method, const Re
     HttpRequest httpReq;
     HttpResponse httpRes;
 
-    httpReq.addHeader("Content-Type", "application/json");
     httpReq.setUrl("/json_rpc");
     httpReq.setBody(jsReq.getBody());
 
