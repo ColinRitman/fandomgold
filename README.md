@@ -1,20 +1,22 @@
-<h1><img title="Unlock the Power of Fandom" src="https://avatars2.githubusercontent.com/u/55260556?s=200&v=4"><img/></h1>
+<img title="Unlock the Power of Fandom" src="https://raw.githubusercontent.com/FandomGold/XFG-data/master/Fango_gif01.GIF"><img/>
+### Fango is open-source decentralized P2P privacy cryptocurrency built by sound money advocates and fandom enthusiasts.
 
-## The FANDOM GOLD Project 
+Based on the CryptoNote protocol & philosophy.
 
-### Private P2P Crypto Currency based on the CryptoNote protocol.
-
-* <p align="left"><a href="https://fandom.gold">Website</a><p align="left">
-* <p align="left"><a href="https://drgl.info">Explorer</a><p align="left">
+* <p align="left"><a href="https://fandomgold.org">Website</a><p align="left">
+* <p align="left"><a href="http://explorer.fandom.gold">Explorer</a><p align="left">
+* <p align="left"><a href="http://xfg.dedaloproduction.ch/#">Explorer</a><p align="left">
  
+
  ______________________________
+ 
 
 
 ##### Master Status   
 
 [![Build Status](https://travis-ci.org/FandomGold/fandomgold.svg?branch=master)](https://travis-ci.org/FandomGold/fandomgold) 
 
-<sup>*"Working software is the primary measure of progress."* [‣]</sup>
+<sup>"Working software is the primary measure of progress." [‣]</sup>
 
 
 [‣]:http://agilemanifesto.org/
@@ -36,14 +38,14 @@ executing the following command.
  sudo apt-get install build-essential git cmake libboost-all-dev
 ```
 
-2. Clone Fandom Gold repository
+2. Clone Fango repository
 ```
-git clone https://github.com/FandomGold/fandomgold
+git clone https://github.com/FandomGold/fango
 
 ```
 3. Open folder with copied repository
 ```
-cd fandomgold
+cd fango
 ```
 4. Building (Compiling)
     (resulting programs will be found in build/release/src)
@@ -52,17 +54,17 @@ cd fandomgold
 make -j4
 ```
 
-5. Starting Fandom Gold daemon
+5. Starting Fango daemon
 ```
-cd fandomgold/build/release/src `
-./fandomgold
+cd fango/build/release/src `
+./fangod
 ````
 try --help from within dæmon for a full list of available commands
-or <code>./fandomgold --help</code> when outside of dæmon 
+or <code>./fangod --help</code> when outside of dæmon 
 _________________________________________________________
 For the most user-friendly graphical interface experience
 
-the [Gold Wallet](https://github.com/fandomgold/goldwallet) is recommended. 
+the [Fango Desktop Wallet](https://github.com/fandomgold/fango-wallet). 
 _________________________________________________________
 
 _________________________________________________________
@@ -93,9 +95,9 @@ ________________
 
 ****Quick step by step tutorial using a Bash terminal on Windows 10****
 
-https://www.windowscentral.com/how-install-bash-shell-command-line-windows-10
-
 *(courtesy of & gratitude to Sir WindowSlayer of Galapagos)*
+
+https://www.windowscentral.com/how-install-bash-shell-command-line-windows-10
 
 Start a Bash window and do as follows
 
@@ -108,29 +110,29 @@ cd
 sudo apt-get update
 sudo apt-get install build-essential git cmake libboost-all-dev
 ```
-3: Grab the Fandom Gold files from Github repository
+3: Grab the Fango files from Github repository
 ```
-git clone https://github.com/FandomGold/fandomgold.git
+git clone https://github.com/FandomGold/fango.git
 ```
 4: Build the files
 ```
-cd fandomgold
+cd fango
 make
 ```
 5: Start client and begin syncing blockchain
 ```
 cd build/release/src/
-./fandomgold
+./fangod
 ```
 *!!keep this terminal running and open new terminal for next step!!*
 
 6: Start simplewallet and create your new wallet (navigate to the folder where you created the wallet)
 ```
-~fandomgold/build/release/src$ ./simplewallet
+~fango/build/release/src$ ./simplewallet
 ```
 or
 ```
-cd fandomgold/build/release/src
+cd fango/build/release/src
 ./simplewallet
 ```
 set up your wallet name & password
@@ -167,7 +169,7 @@ export PATH=/opt/android/tool32/arm-linux-androideabi/bin:/opt/android/tool32/bi
 ./b2 abi=aapcs architecture=arm binary-format=elf address-model=32 link=static runtime-link=static --with-chrono --with-date_time --with-filesystem --with-program_options --with-regex --with-serialization --with-system --with-thread --with-context --with-coroutine --with-atomic --build-dir=android32 --stagedir=android32 toolset=clang threading=multi threadapi=pthread target-os=android --reconfigure stage
 ```
 
-Build Fandom Gold for 32 bit Android
+Build fango for 32 bit Android
 ```
 mkdir -p build/release.android32
 cd build/release.android32
