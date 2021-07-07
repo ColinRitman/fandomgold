@@ -706,11 +706,11 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
     std::cout <<"\n";
     std::cout <<  "Welcome to the FANGO command-line wallet."<<"\n";
     std::cout << "Please choose from the following options what you would like to do:\n";
-    std::cout << "O - Open wallet\n";
     std::cout << "G - Generate new wallet\n";
+    std::cout << "O - Open wallet\n";
     std::cout << "R - Restore backup/paperwallet\n";
     std::cout << "I - Import wallet from keys\n";
-    std::cout << "T - Import tracking wallet\n";
+    std::cout << "M - Mnemonic seed import\n";
     std::cout << "E - Exit\n";
     char c;
     do {

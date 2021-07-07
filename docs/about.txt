@@ -1,20 +1,13 @@
-[ Conceal.Network ]
+[ Fango.Money ]
 
-DECENTRALIZED BANKING, PRIVATE TRANSACTIONS & SECURE MESSAGING
+PRIVATE TRANSACTIONS, DECENTRALIZED BANKING, & SECURE MESSAGING
 
+Fango is a decentralized blockchain bank with on-ledger deposits paying interest, without involvement of financial institutions, powered by 100% open source code.
 
-{ What's Conceal.Network? }
+Fango network enables secure untraceable transfer of funds and anonymous messaging using a distributed public ledger, the sender and receiver are kept anonymous, a key concern in a post Snowden world.
+Hackers cannot trace money or messages when the messages are sent across public networks.
 
-Conceal.Network is a decentralized blockchain bank, with deposits and investments paying interest rates, without involvement of financial institutions, powered by 100% open source code.
+Fango (XFG) is based on the Cryptonote protocol and runs on a secure peer-to-peer network technology to operate with no central authority. You control the private keys to your funds.
 
-Conceal.Network enables untraceable and anonymous messaging, and a secure way to transfer funds. Using a distributed public ledger, the sender and receiver are kept anonymous, a key concern in a post Snowden world. Hackers cannot trace money or messages when the messages are sent across public networks.
-
-Conceal Cryptocurrency (₡CCX) is based on the Cryptonote protocol and runs on a secure peer-to-peer network technology to operate with no central authority. You control the private keys to your funds.
-
-Conceal is accessible by anyone in the world regardless of their geographic location or status. Our blockchain is resistant to any kind of analysis. All your CCX transactions and messages are anonymous.
-
-Conceal avoids many concerns, e.g. technological, environment impact, reputational and security, of Bitcoin, and provides a glimpse of the future.
-
-Conceal is open-source, community driven and truly decentralized.
-
-No one owns Conceal, everyone can take part.
+No one owns Fango network and everyone can take part.  Fango is open-source, community driven and truly decentralized - accessible by anyone in the world regardless of their geographic location or status.
+Fango blockchain is resistant to any kind of analysis.  All your transactions and messages are anonymous. 

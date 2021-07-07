@@ -1,8 +1,18 @@
-// Copyright (c) 2011-2017 The Cryptonote developers
-// Copyright (c) 2017-2018 The Circle Foundation & Conceal Devs
+// Copyright (c) 2012-2018 The CryptoNote developers
+// Copyright (c) 2016-2019 The Karbowanec developers
 // Copyright (c) 2018-2019 Conceal Network & Conceal Devs
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2018-2021 Fandom Gold Society
+//
+// This file is part of Fango.
+//
+// Fango is open-source software: you can redistribute and/or
+// modify it under the terms of the MIT/X11 software license.
+// Fango is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty
+// of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// You should've received a copy of MIT/X11 software license
+// along with Fango. See LICENSE file for more details.
+// Or use http://www.opensource.org/licenses/mit-license.php
 
 #pragma once
 
